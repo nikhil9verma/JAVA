@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -28,23 +27,33 @@ public class UserController {
     }
 
     @PostMapping
-    public void createUser(@RequestBody User user){
-        userService.saveEntry(user);
+    public ResponseEntity<?> createUser(@RequestBody User user) {
+        try {
+            userService.createUser(user); // Uses validation
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body("User created successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body("Error creating user: " + e.getMessage());
+        }
     }
 
     @PutMapping
-    public ResponseEntity<?> updateUser(@RequestBody User user){
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        User userInDb = userService.findUserByUsername(user.getUserName());
-        if(userInDb!=null){
-            userInDb.setUserName(user.getUserName());
-            userInDb.setPassword(user.getPassword());
-            userService.saveEntry(userInDb);
+    public ResponseEntity<?> updateUser(@RequestBody User user) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String authenticatedUsername = authentication.getName();
+
+            User updatedUser = userService.updateUser(authenticatedUsername, user);
+            return ResponseEntity.ok("User updated successfully");
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body("Error updating user: " + e.getMessage());
         }
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
+
 
 
 

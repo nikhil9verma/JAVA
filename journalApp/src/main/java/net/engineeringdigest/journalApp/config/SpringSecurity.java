@@ -16,34 +16,36 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-@Configuration
-@EnableWebSecurity
-public class SpringSecurity {
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .csrf(csrf -> csrf.disable()) // Completely disable CSRF
-                .authorizeHttpRequests(auth -> auth
-                        // Most specific patterns FIRST
-                        .requestMatchers(HttpMethod.POST, "/user").permitAll()
-                        .requestMatchers("/public/**").permitAll()
+    @Configuration
+    @EnableWebSecurity
+    public class SpringSecurity {
 
-                        // Less specific patterns AFTER
-                        .requestMatchers("/journal/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/user").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/user").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/user").authenticated()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+            return http
+                    .csrf(csrf -> csrf.disable())
+                    .authorizeHttpRequests(auth -> auth
+                            // EXACT pattern matching - order matters!
+                            .requestMatchers(HttpMethod.POST, "/user").permitAll()
+                            .requestMatchers("/public/**").permitAll()
 
-                        .anyRequest().authenticated())
-                .httpBasic(Customizer.withDefaults())
-                .build();
+                            // More specific patterns AFTER permitAll
+                            .requestMatchers(HttpMethod.PUT, "/user/**").authenticated()
+                            .requestMatchers(HttpMethod.GET, "/user/**").authenticated()
+                            .requestMatchers("/journal/**").authenticated()
+                            .requestMatchers("/admin/**").hasRole("ADMIN")
+
+                            .anyRequest().authenticated())
+                    .httpBasic(Customizer.withDefaults())
+                    .build();
+        }
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+            return new BCryptPasswordEncoder();
+        }
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-}
+
 
