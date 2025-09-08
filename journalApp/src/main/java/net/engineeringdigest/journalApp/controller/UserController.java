@@ -1,8 +1,11 @@
 package net.engineeringdigest.journalApp.controller;
 
+import net.engineeringdigest.journalApp.Repository.UserRepo;
+import net.engineeringdigest.journalApp.WeatherResponse;
 import net.engineeringdigest.journalApp.entity.JournalEntry;
 import net.engineeringdigest.journalApp.entity.User;
 import net.engineeringdigest.journalApp.service.UserService;
+import net.engineeringdigest.journalApp.service.WeatherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,10 +24,16 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @GetMapping
-    public List<User> getAllUsers() {
-        return userService.getAll();
-    }
+    @Autowired
+    private UserRepo userRepo;
+
+    @Autowired
+    private WeatherService weatherService;
+
+//    @GetMapping
+//    public List<User> getAllUsers() {
+//        return userService.getAll();
+//    }
 
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody User user) {
@@ -51,6 +60,31 @@ public class UserController {
             return ResponseEntity.badRequest()
                     .body("Error updating user: " + e.getMessage());
         }
+    }
+    @DeleteMapping
+    public ResponseEntity<?> deleteUser(@RequestBody User user) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String authenticatedUsername = authentication.getName();
+
+            userRepo.deleteByUserName(user.getUserName());
+            return ResponseEntity.ok("User deleted successfully");
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<?> greeting(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    WeatherResponse Weather_Response=weatherService.getWeather("Chandigarh");
+    String greeting ="";
+    if(Weather_Response!=null){
+        greeting=" ,Weather feels like"+Weather_Response.getCurrent().getFeelslike_c();
+    }
+        return new ResponseEntity<>("Hi "+authentication.getName()+greeting,HttpStatus.OK);
+
     }
 }
 

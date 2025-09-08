@@ -1,17 +1,16 @@
 package net.engineeringdigest.journalApp.service;
 
-import net.engineeringdigest.journalApp.Repository.JournalEntryRepo;
 import net.engineeringdigest.journalApp.Repository.UserRepo;
 import net.engineeringdigest.journalApp.entity.JournalEntry;
 import net.engineeringdigest.journalApp.entity.User;
 import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -25,22 +24,38 @@ public class UserService {
 
     @Autowired  // Inject as Spring bean instead of static field
     private PasswordEncoder passwordEncoder;
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
+//    @Transactional
+//    public void saveEntry(JournalEntry journalEntry, String userName ) {
+//        try {
+//            User user = userService.findByUserName(userName);
+//        }
+//        catch (Exception e) {
+//
+//        }
+//    }
     // Create new user with encoded password and default role
-    public void saveEntry(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+    public boolean saveNewEntry(User user) {
+        try {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // Ensure roles are always set
-        if (user.getRole() == null || user.getRole().isEmpty()) {
-            user.setRole(Arrays.asList("USER"));
+            // Ensure roles are always set
+            if (user.getRole() == null || user.getRole().isEmpty()) {
+                user.setRole(Arrays.asList("USER"));
+            }
+
+            userRepo.save(user);
+            return true;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+
         }
-
-        userRepo.save(user);
     }
 
     // Alternative method for user creation (consistent with saveEntry)
-    public void saveNewUser(User user) {
-        saveEntry(user); // Reuse the main save logic
+    public void saveUser(User user) {
+        userRepo.save(user); // Reuse the main save logic
     }
 
     // Update existing user with proper password handling
@@ -104,10 +119,6 @@ public class UserService {
         if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
             throw new RuntimeException("Password cannot be empty");
         }
-
-        if (user.getPassword().length() < 3) {
-            throw new RuntimeException("Password must be at least 3 characters long");
-        }
     }
 
     // Create user with validation
@@ -118,6 +129,6 @@ public class UserService {
             throw new RuntimeException("Username already exists: " + user.getUserName());
         }
 
-        saveEntry(user);
+        saveNewEntry(user);
     }
 }

@@ -6,8 +6,9 @@ import net.engineeringdigest.journalApp.entity.User;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,7 +17,6 @@ import java.util.Optional;
 
 @Component
 public class JournalEntryService {
-
 
 
     @Autowired
@@ -34,8 +34,8 @@ public class JournalEntryService {
             journalEntry.setDate(LocalDateTime.now());
             JournalEntry saved = journalEntryRepo.save(journalEntry);
             user.getJournalEntries().add(saved);
-            user.setUserName(null);
-            userService.saveEntry(user);
+
+            userService.saveUser(user);
         }
         catch (Exception e) {
             System.out.println(e);
@@ -54,12 +54,27 @@ public class JournalEntryService {
        return journalEntryRepo.findById(id);
     }
 
-    public void deleteById(ObjectId Id,String userName){
-        User user = userService.findUserByUsername(userName);
-        user.getJournalEntries().removeIf(x->x.getId().equals(Id));
-        userService.saveEntry(user);
-        journalEntryRepo.deleteById(Id);
+    @Transactional
+    public boolean deleteById(ObjectId Id,String userName) {
+        boolean removed = false;
+        try {
+            User user = userService.findUserByUsername(userName);
+             removed = user.getJournalEntries().removeIf(x -> x.getId().equals(Id));
+            if (removed) {
+
+
+                userService.saveUser(user);
+                journalEntryRepo.deleteById(Id);
+
+            }
+        } catch (Exception e) {
+//            logger.info("hhahahahahahahahhaahahahaha");
+            throw new RuntimeException("AN error occured while deleting entry: ",e);
+        }
+        return removed;
     }
+
+
 
 }
 

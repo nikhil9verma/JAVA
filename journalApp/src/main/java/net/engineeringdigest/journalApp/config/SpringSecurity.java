@@ -17,35 +17,36 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
-    @Configuration
-    @EnableWebSecurity
-    public class SpringSecurity {
+@Configuration
+@EnableWebSecurity
+public class SpringSecurity {
 
-        @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-            return http
-                    .csrf(csrf -> csrf.disable())
-                    .authorizeHttpRequests(auth -> auth
-                            // EXACT pattern matching - order matters!
-                            .requestMatchers(HttpMethod.POST, "/user").permitAll()
-                            .requestMatchers("/public/**").permitAll()
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        // EXACT pattern matching - order matters!
+                        .requestMatchers(HttpMethod.POST, "/user").permitAll()
+                        .requestMatchers("/public/**").permitAll()
 
-                            // More specific patterns AFTER permitAll
-                            .requestMatchers(HttpMethod.PUT, "/user/**").authenticated()
-                            .requestMatchers(HttpMethod.GET, "/user/**").authenticated()
-                            .requestMatchers("/journal/**").authenticated()
-                            .requestMatchers("/admin/**").hasRole("ADMIN")
+                        // More specific patterns AFTER permitAll
+                        .requestMatchers(HttpMethod.GET, "/user/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/user/**").authenticated()
+                        .requestMatchers("/journal/**").authenticated()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
 
-                            .anyRequest().authenticated())
-                    .httpBasic(Customizer.withDefaults())
-                    .build();
-        }
-
-        @Bean
-        public PasswordEncoder passwordEncoder() {
-            return new BCryptPasswordEncoder();
-        }
+                        .anyRequest().authenticated())
+                .httpBasic(Customizer.withDefaults())
+                .build();
     }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+
 
 
 
